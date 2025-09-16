@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Tailwind Colors */
+        :root {
+            --primary-purple: #8b5cf6; /* A vibrant purple */
+            --light-purple: #a78bfa;   /* Lighter purple for accents */
+            --dark-purple: #6d28d9;    /* Darker purple for hover/active */
+            --bg-light: #e5e7eb;       /* Light gray background */
+            --bg-dark: #1f2937;        /* Dark gray background */
+            --card-light: #ffffff;     /* White card background */
+            --card-dark: #374151;      /* Dark card background */
+            --text-light: #1f2937;     /* Dark text */
+            --text-dark: #e5e7eb;      /* Light text */
+        }
+
+        body.light {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+        }
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; /* Changed to Inter as per instructions */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container-wrapper {
+            display: flex;
+            min-height: 100vh;
+            border-radius: 20px; /* Rounded corners for the main app container */
+            overflow: hidden;
+            background-color: var(--card-light); /* Main app background */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        body.dark .container-wrapper {
+            background-color: var(--card-dark);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .sidebar {
+            width: 250px; /* Fixed width sidebar */
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--primary-purple); /* Purple sidebar */
+            color: white;
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+        body.dark .sidebar {
+            background-color: var(--dark-purple); /* Darker purple for dark mode sidebar */
+        }
+
+        .sidebar-nav-item {
+            @apply flex items-center w-full px-4 py-3 rounded-lg text-lg mb-3 cursor-pointer;
+            background-color: transparent;
+            color: rgba(255,255,255,0.8);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .sidebar-nav-item:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .sidebar-nav-item.active {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: 600;
+        }
+        .sidebar-nav-item i {
+            margin-right: 0.75rem;
+        }
+
+        .main-content-area {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto; /* Allow scrolling for content */
+        }
+        .header-top {
+            @apply flex justify-between items-center pb-4 mb-6 border-b;
+            border-color: rgba(0,0,0,0.1);
+        }
+        body.dark .header-top {
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        /* Re-apply and adjust component styles for the new theme */
+        .btn-primary {
+            background-color: var(--primary-purple);
+            color: white;
+            @apply py-2 px-5 rounded-lg hover:bg-opacity-90 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
+        }
+        .btn-secondary {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            @apply py-2 px-5 rounded-lg hover:bg-slate-300 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-50;
+        }
+        body.dark .btn-secondary {
+            background-color: var(--card-dark);
+            color: var(--text-dark);
+            border: 1px solid rgba(255,255,255,0.1);
+            &:hover {
+                background-color: var(--dark-purple);
+                color: white;
+            }
+        }
+
+        .input-field {
+            background-color: #f3f4f6; /* Lighter background for inputs */
+            border-color: #d1d5db; /* Light border */
+            color: var(--text-light);
+            @apply block w-full p-3 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition-colors duration-300 placeholder-slate-500;
+        }
+        body.dark .input-field {
+            background-color: #4b5563; /* Darker input background */
+            border-color: #6b7280; /* Darker border */
+            color: var(--text-dark);
+            placeholder-color: #9ca3af;
+        }
+
+        .section-title {
+            color: var(--text-light);
+            @apply text-2xl font-semibold mb-4 pb-2 border-b-2;
+            border-color: var(--light-purple);
+            @apply flex items-center gap-3;
+        }
+        body.dark .section-title {
+            color: var(--text-dark);
+            border-color: var(--primary-purple);
+        }
+
+        .card {
+            background-color: var(--card-light);
+            color: var(--text-light);
+            @apply p-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02];
+        }
+        body.dark .card {
+            background-color: var(--bg-dark); /* Using overall dark background for cards */
+            color: var(--text-dark);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        
+        .data-item {
+            background-color: rgba(139, 92, 246, 0.1); /* Light purple tint */
+            color: var(--text-light);
+            @apply p-3 rounded-lg mb-2 shadow-sm;
+        }
+        body.dark .data-item {
+            background-color: rgba(109, 40, 217, 0.3); /* Darker purple tint */
+            color: var(--text-dark);
+        }
+        .data-item strong {
+            color: var(--primary-purple);
+        }
+        body.dark .data-item strong {
+            color: var(--light-purple);
+        }
+
+        /* Toast Notification */
+        .toast {
+            @apply fixed bottom-5 right-5 bg-slate-900 text-white py-3 px-5 rounded-lg shadow-xl translate-y-[200%] opacity-0 transition-all duration-500 ease-in-out;
+        }
+        .toast.show {
+            @apply translate-y-0 opacity-100;
+        }
+        .toast.success { @apply bg-green-500 text-white; } /* Adjusted colors for success/error */
+        .toast.error { @apply bg-red-600 text-white; }
+        
+        /* Chat window styling */
+        #chatWindow div.bg-teal-500 {
+            background-color: var(--primary-purple);
+        }
+        #chatWindow div.bg-slate-200 {
+            background-color: #e2e8f0; /* Light gray for AI bubble in light mode */
+            color: var(--text-light);
+        }
+        body.dark #chatWindow div.bg-slate-200 {
+            background-color: #4a5568; /* Darker gray for AI bubble in dark mode */
+            color: var(--text-dark);
+        }
+
+        /* Journal entry specific styles */
+        .journal-entry-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Limit to 3 lines initially */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+        }
+        .journal-entry-text.expanded {
+            -webkit-line-clamp: unset; /* Show full text */
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        }
+        .read-more-btn {
+            @apply text-sm text-primary-purple hover:underline cursor-pointer mt-1 block;
+        }
+        body.dark .read-more-btn {
+            color: var(--light-purple);
+        }
+
+
+        /* Media queries for responsiveness */
+        @media (max-width: 768px) {
+            .container-wrapper {
+                flex-direction: column;
+                border-radius: 0;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                padding: 1rem;
+                border-radius: 0;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                flex-direction: row; /* Stack items horizontally */
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .sidebar-nav-item {
+                width: auto;
+                margin-bottom: 0.5rem;
+                margin-right: 0.5rem;
+                font-size: 0.9rem;
+                padding: 0.5rem 0.75rem;
+            }
+            .sidebar-nav-item i {
+                margin-right: 0.5rem;
+            }
+            .main-content-area {
+                padding: 1rem;
+            }
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-top h1 {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="light">
+    <div class="p-4 sm:p-6 md:p-8 container-wrapper max-w-full md:max-w-[1200px] mx-auto my-0 sm:my-4 md:my-8 rounded-2xl">
+        <div id="auth-view" class="flex flex-col items-center justify-center p-8 w-full">
+            <h1 class="text-5xl font-bold text-slate-900 dark:text-white mb-4">Health AI</h1>
+            <p class="text-xl text-slate-600 dark:text-slate-300 mb-8">Your Modern Health Companion</p>
+            
+            <div class="w-full bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl">
+            </div>
+        </div>
+
+        <div id="main-view" class="hidden w-full flex">
+            <aside class="sidebar">
+                <div class="flex items-center mb-10 w-full justify-center">
+                    <img src="https://placehold.co/40x40/8b5cf6/ffffff?text=AI" alt="AI Icon" class="w-10 h-10 rounded-full mr-3">
+                    <h2 class="text-2xl font-bold">Health AI</h2>
+                </div>
+                
+                <div class="flex items-center text-white mb-8">
+                    <i class="fas fa-user-circle text-4xl mr-3"></i>
+                    <div>
+                        <span class="block text-lg font-semibold" id="sidebarUsername"></span>
+                        <span class="block text-sm opacity-80" id="welcomeMessage"></span>
+                    </div>
+                </div>
+                
+                <ul class="w-full">
+                    <li><button data-view="dashboard" class="sidebar-nav-item active"><i class="fas fa-tachometer-alt"></i>Dashboard</button></li>
+                    <li><button data-view="log-data" class="sidebar-nav-item"><i class="fas fa-plus-circle"></i>Log Data</button></li>
+                    <li><button data-view="ai-assistant" class="sidebar-nav-item"><i class="fas fa-robot"></i>AI Assistant</button></li>
+                    <li><button data-view="medication-mgmt" class="sidebar-nav-item"><i class="fas fa-pills"></i>Medications</button></li>
+                    <li><button data-view="mental-wellness" class="sidebar-nav-item"><i class="fas fa-brain"></i>Mental Wellness</button></li>
+                    <li><button data-view="journaling" class="sidebar-nav-item"><i class="fas fa-book-open"></i>Journaling</button></li> <li><button data-view="profile-update" class="sidebar-nav-item"><i class="fas fa-user-edit"></i>Update Profile</button></li>
+                </ul>
+
+                <div class="mt-auto flex flex-col w-full items-center">
+                    <button id="theme-toggle" class="btn-secondary w-full mb-3 flex items-center justify-center">
+                        <i class="fas fa-adjust mr-2"></i> Toggle Theme
+                    </button>
+                    <button id="logoutBtn" class="btn-secondary w-full flex items-center justify-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </button>
+                </div>
+            </aside>
+
+            <main class="main-content-area">
+                <div id="content-area">
+                    </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast">This is a toast notification!</div>
+
+    <script>
+        // --- App State & Classes ---
+        const STORAGE_KEY = 'healthAssistantData_v2';
+        function loadData() { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : { users: {}, currentUsername: null, theme: 'light' }; }
+        function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+        let appData = loadData();
+        let currentUserProfile = null;
+        let vitalChart = null;
+        let calorieChart = null;
+
+        // Timer variables for physical activity
+        let activityTimerInterval = null;
+        let activityStartTime = 0;
+        let activityElapsedTime = 0;
+
+        // Predefined calorie data for lookup
+        const foodCalorieDatabase = {
+            "apple": 95,
+            "banana": 105,
+            "orange": 62,
+            "chicken breast": 165, // per 100g
+            "rice": 130, // per 100g cooked
+            "broccoli": 55, // per 100g
+            "egg": 78,
+            "oatmeal": 150, // per 40g dry
+            "milk": 103, // per 1 cup (240ml) 2% milk
+            "bread (whole wheat)": 82, // per slice
+            "yogurt (plain)": 150, // per 1 cup
+            "salmon": 208, // per 100g
+            "pasta (cooked)": 131, // per 100g
+            "potato (baked)": 161, // per medium potato
+            "almonds": 579, // per 100g
+            "avocado": 160 // per 100g
+        };
+
+        class UserProfile {
+            constructor(username, name, age, gender, height_cm, weight_kg, medical_history = "") { this.username = username; this.name = name; this.age = age; this.gender = gender; this.height_cm = height_cm; this.weight_kg = weight_kg; this.medical_history = medical_history; this.vital_signs = []; this.calories_consumed = []; this.activities = []; this.water_intake_ml = []; this.mental_wellness_checkins = []; this.medications = []; this.journal_entries = [];} // Added journal_entries
+            updateProfile(kwargs) { for (const key in kwargs) { if (this.hasOwnProperty(key)) this[key] = kwargs[key]; } saveAppState(); }
+            addVitalSign(bp_systolic, bp_diastolic, sugar, temperature, oxygen) { const now = new Date(); this.vital_signs.push({ date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), bp_systolic, bp_diastolic, sugar, temperature, oxygen }); saveAppState(); }
+            addCalorieIntake(food_item, calories) { const now = new Date(); this.calories_consumed.push({ date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), food_item, calories }); saveAppState(); }
+            addPhysicalActivity(activity_type, duration_minutes, calories_burned) { const now = new Date(); this.activities.push({ date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), activity_type, duration_minutes, calories_burned }); saveAppState(); }
+            addWaterIntake(amount_ml) { const now = new Date(); this.water_intake_ml.push({ date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), amount_ml }); saveAppState(); }
+            addMentalWellnessCheckin(mood, notes = "") { const now = new Date(); this.mental_wellness_checkins.push({ date: now.toISOString().slice(0, 10), mood, notes }); saveAppState(); }
+            addMedication(name, dosage, schedule, imageUrl = '') { this.medications.push({ name, dosage, schedule, last_taken: null, imageUrl }); saveAppState(); }
+            markMedicationTaken(medication_name) { for (const med of this.medications) { if (med.name.toLowerCase() === medication_name.toLowerCase()) { med.last_taken = new Date().toISOString().slice(0, 16).replace('T', ' '); saveAppState(); return true; } } return false; }
+            addJournalEntry(entry_text) { const now = new Date(); this.journal_entries.push({ date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 5), entry: entry_text }); saveAppState(); } // New method for journaling
+        }
+
+        class AIHealthAssistant {
+            constructor() { 
+                this.general_advice_responses = ["Remember to drink plenty of water throughout the day.", "Aim for at least 30 minutes of moderate exercise most days of the week.", "Include a variety of fruits and vegetables in your diet.", "Prioritize 7-9 hours of quality sleep nightly.", "Manage stress through meditation or deep breathing exercises."]; 
+                this.emergency_advice_responses = { 
+                    "chest pain": "Seek immediate medical attention for chest pain. Call emergency services.", 
+                    "difficulty breathing": "If experiencing severe difficulty breathing, call emergency services immediately.", 
+                    "sudden weakness": "This could be a sign of a stroke. Call emergency services right away.", 
+                    "numbness": "This could be a sign of a stroke. Call emergency services right away.", 
+                    "severe bleeding": "Apply direct pressure to the wound and seek emergency medical care." 
+                }; 
+                this.diet_recommendations = { 
+                    "weight loss": "Focus on lean proteins, whole grains, and lots of vegetables. Control portion sizes.", 
+                    "muscle gain": "Increase protein intake, complex carbohydrates, and healthy fats. Pair with strength training.", 
+                    "heart health": "Choose foods low in saturated fat, cholesterol, and sodium. Opt for whole grains, fruits, and vegetables.", 
+                    "general wellness": "Eat a balanced diet with a variety of nutrient-dense foods. Limit processed foods and sugary drinks." 
+                }; 
+                this.medication_diet_plans = {
+                    "blood pressure medication": "When on blood pressure medication, focus on a diet low in sodium, rich in potassium, and plenty of fruits, vegetables, and whole grains. Consult your doctor for specific dietary needs.",
+                    "diabetes medication": "For diabetes medication, prioritize consistent carbohydrate intake, choose whole grains, lean proteins, and non-starchy vegetables. Monitor blood sugar levels closely and follow your doctor's or dietitian's advice.",
+                    "cholesterol medication": "If taking cholesterol medication, opt for foods low in saturated and trans fats. Increase fiber intake with oats, fruits, and vegetables. Include healthy fats from sources like avocados and nuts."
+                };
+                // Symptom-based remedies and precautions dataset
+                this.symptom_remedies_precautions = {
+                    "cough": {
+                        remedies: [
+                            "Drink warm liquids like honey lemon tea.",
+                            "Gargle with salt water.",
+                            "Use a humidifier.",
+                            "Get plenty of rest.",
+                            "Avoid throat irritants like smoke."
+                        ],
+                        precautions: [
+                            "Avoid cold drinks.",
+                            "Don't suppress a productive cough entirely.",
+                            "Seek medical advice if cough persists for more than a week, or is accompanied by fever/difficulty breathing."
+                        ]
+                    },
+                    "fever": {
+                        remedies: [
+                            "Stay hydrated with water and clear broths.",
+                            "Rest sufficiently.",
+                            "Take a lukewarm bath.",
+                            "Apply cool compresses to the forehead."
+                        ],
+                        precautions: [
+                            "Avoid strenuous activity.",
+                            "Do not overdress.",
+                            "Monitor temperature regularly.",
+                            "Consult a doctor if fever is very high, lasts long, or occurs with other severe symptoms."
+                        ]
+                    },
+                    "cold": {
+                        remedies: [
+                            "Drink plenty of fluids (water, juice, clear broth).",
+                            "Get enough rest.",
+                            "Soothe a sore throat with warm salt water gargles or honey.",
+                            "Use saline nasal sprays for congestion."
+                        ],
+                        precautions: [
+                            "Wash hands frequently to prevent spreading.",
+                            "Avoid close contact with others if sick.",
+                            "Don't take antibiotics for a common cold (it's a virus)."
+                        ]
+                    },
+                    "sore throat": {
+                        remedies: [
+                            "Gargle with warm salt water several times a day.",
+                            "Drink warm liquids like tea with honey.",
+                            "Suck on lozenges or hard candies.",
+                            "Use a humidifier."
+                        ],
+                        precautions: [
+                            "Avoid irritating foods (spicy, acidic).",
+                            "Rest your voice.",
+                            "See a doctor if severe pain, difficulty swallowing, or fever develops."
+                        ]
+                    }
+                };
+
+                // New: Disease prediction, medication, and general prediction datasets
+                this.symptom_disease_mapping = {
+                    "runny nose, cough, sore throat, fatigue": "Common Cold",
+                    "fever, cough, body aches, headache, fatigue": "Flu",
+                    "fever, rash, headache, joint pain": "Dengue Fever",
+                    "frequent urination, increased thirst, fatigue, blurred vision": "Diabetes (Type 2)",
+                    "chest pain, shortness of breath, dizziness": "Heart Attack (Seek immediate medical attention!)",
+                    "persistent cough, night sweats, weight loss": "Tuberculosis",
+                    "joint pain, swelling, stiffness": "Arthritis",
+                    "abdominal pain, nausea, vomiting, diarrhea": "Gastroenteritis",
+                    "headache, sensitivity to light/sound, nausea": "Migraine",
+                    "skin rash, itching, redness": "Allergy (Contact Dermatitis)",
+                    "difficulty breathing, wheezing, chest tightness": "Asthma",
+                    "pain or burning during urination, frequent urge to urinate, cloudy urine": "Urinary Tract Infection (UTI)"
+                };
+
+                this.disease_medication_mapping = {
+                    "Common Cold": "Over-the-counter cold remedies (pain relievers, decongestants, cough suppressants).",
+                    "Flu": "Antiviral medications (if prescribed by doctor), pain relievers, fever reducers.",
+                    "Dengue Fever": "No specific antiviral treatment. Pain relievers (acetaminophen), rest, hydration.",
+                    "Diabetes (Type 2)": "Metformin, insulin (if prescribed), other oral medications. Diet and exercise are crucial.",
+                    "Heart Attack": "Emergency medical treatment (aspirin, nitroglycerin, beta-blockers, statins).",
+                    "Tuberculosis": "Multiple antibiotics for several months (e.g., Isoniazid, Rifampicin, Pyrazinamide, Ethambutol).",
+                    "Arthritis": "NSAIDs, corticosteroids, DMARDs (Disease-Modifying Antirheumatic Drugs), biologics.",
+                    "Gastroenteritis": "Oral rehydration salts, anti-diarrheal medication (if appropriate), probiotics.",
+                    "Migraine": "Pain relievers (NSAIDs, triptans), anti-nausea medication, preventative medications (beta-blockers, antidepressants).",
+                    "Allergy (Contact Dermatitis)": "Antihistamines, corticosteroids (topical or oral).",
+                    "Asthma": "Bronchodilators (rescue inhalers), inhaled corticosteroids (maintenance).",
+                    "Urinary Tract Infection (UTI)": "Antibiotics (e.g., trimethoprim/sulfamethoxazole, nitrofurantoin)."
+                };
+
+                this.disease_predictions_advice = {
+                    "Common Cold": "Prediction: Recovery within 7-10 days with rest and fluids. Advice: Avoid close contact to prevent spread.",
+                    "Flu": "Prediction: Symptoms can be more severe than a cold and may lead to complications. Advice: Get vaccinated annually.",
+                    "Dengue Fever": "Prediction: Most cases are mild, but severe dengue can occur. Advice: Prevent mosquito bites, seek medical care for warning signs.",
+                    "Diabetes (Type 2)": "Prediction: Lifelong management required. Advice: Regular monitoring, diet control, exercise, and adherence to medication.",
+                    "Heart Attack": "Prediction: This is a medical emergency. Immediate treatment is vital to prevent serious complications or death. Advice: Call emergency services immediately.",
+                    "Tuberculosis": "Prediction: Curable with proper medication adherence. Advice: Complete the full course of antibiotics to prevent drug resistance.",
+                    "Arthritis": "Prediction: Chronic condition requiring ongoing management. Advice: Physical therapy, exercise, and pain management are key.",
+                    "Gastroenteritis": "Prediction: Usually resolves in a few days. Advice: Maintain hydration, avoid solid foods initially, gradually reintroduce bland foods.",
+                    "Migraine": "Prediction: Recurrent headaches, but triggers can often be identified and managed. Advice: Identify and avoid triggers, manage stress.",
+                    "Allergy (Contact Dermatitis)": "Prediction: Rash usually clears with avoidance of allergen and treatment. Advice: Identify and avoid the allergen.",
+                    "Asthma": "Prediction: Chronic condition that can be managed with medication to control symptoms. Advice: Identify triggers and have an action plan.",
+                    "Urinary Tract Infection (UTI)": "Prediction: Typically resolves quickly with antibiotics. Advice: Drink plenty of water, cranberry juice, practice good hygiene."
+                };
+
+                this.chatHistory = []; // To store conversation context for LLM
+            }
+            getGeneralAdvice() { return this.general_advice_responses[Math.floor(Math.random() * this.general_advice_responses.length)]; }
+            getEmergencyAdvice(symptom) { const symptomLower = symptom.toLowerCase(); for (const key in this.emergency_advice_responses) { if (symptomLower.includes(key)) return `🚨 Emergency: ${this.emergency_advice_responses[key]}`; } return "For any severe or concerning symptoms, please consult a medical professional immediately or call emergency services."; }
+            getDietRecommendation(goal) { const goalLower = goal.toLowerCase(); return this.diet_recommendations[goalLower] || "I can provide recommendations for weight loss, muscle gain, or heart health. Please specify your goal."; }
+            getCalorieRecommendation(userProfile) { if (!userProfile) return "Please log in to get a calorie recommendation."; let bmr; if (userProfile.gender.toLowerCase() === 'male') { bmr = (10 * userProfile.weight_kg) + (6.25 * userProfile.height_cm) - (5 * userProfile.age) + 5; } else { bmr = (10 * userProfile.weight_kg) + (6.25 * userProfile.height_cm) - (5 * userProfile.age) - 161; } const dailyCalories = bmr * 1.2; return `Based on your profile, an estimated daily calorie intake for maintaining weight is around ${Math.floor(dailyCalories)} calories. Adjust based on your activity level and goals.`; }
+            getWelcomeGreeting(name) { const hour = new Date().getHours(); if (hour < 12) return `Good morning, ${name}!`; if (hour < 18) return `Good afternoon, ${name}!`; return `Good evening, ${name}!`; }
+            getMedicationDietPlan(medicationName) {
+                const medLower = medicationName.toLowerCase();
+                for (const key in this.medication_diet_plans) {
+                    if (medLower.includes(key)) {
+                        return this.medication_diet_plans[key];
+                    }
+                }
+                return `I do not have specific dietary advice for "${medName}". Please consult your healthcare provider for personalized guidance.`;
+            }
+
+            // Enhanced: Conversational AI with LLM, now with local data lookup for symptoms/diseases
+            async getSymptomBasedAdvice(prompt) {
+                const aiResponseDiv = document.getElementById('aiResponse');
+                aiResponseDiv.innerHTML = '<span class="italic text-slate-500 dark:text-slate-400">Thinking...</span>'; // Loading indicator
+                const normalizedPrompt = prompt.toLowerCase().trim();
+
+                let foundSymptomMatch = false;
+                let aiResponse = "";
+
+                // 1. Check local symptom_remedies_precautions database first
+                for (const symptom in this.symptom_remedies_precautions) {
+                    if (normalizedPrompt.includes(symptom)) {
+                        const data = this.symptom_remedies_precautions[symptom];
+                        aiResponse += `For your ${symptom}, here are some general home remedies and precautions:\n\n`;
+                        aiResponse += "Remedies:\n" + data.remedies.map(r => `- ${r}`).join('\n') + "\n\n";
+                        aiResponse += "Precautions:\n" + data.precautions.map(p => `- ${p}`).join('\n');
+                        foundSymptomMatch = true;
+                        break; // Stop after first match
+                    }
+                }
+
+                // 2. Check local symptom_disease_mapping for disease prediction
+                for (const symptomsKey in this.symptom_disease_mapping) {
+                    const symptomsArray = symptomsKey.split(', ').map(s => s.trim());
+                    const allSymptomsPresent = symptomsArray.every(symptom => normalizedPrompt.includes(symptom));
+
+                    if (allSymptomsPresent) {
+                        const disease = this.symptom_disease_mapping[symptomsKey];
+                        const medication = this.disease_medication_mapping[disease] || "No specific medication information available.";
+                        const predictionAdvice = this.disease_predictions_advice[disease] || "No specific prediction or advice available.";
+                        
+                        aiResponse += `\n\nBased on your symptoms, a possible condition could be: **${disease}**.`;
+                        aiResponse += `\n\n**General Medication Info:** ${medication}`;
+                        aiResponse += `\n**Prediction/Advice:** ${predictionAdvice}`;
+                        aiResponse += `\n\n**❗ Important Disclaimer: This is an AI-generated general suggestion and NOT a medical diagnosis. Always consult a qualified healthcare professional for accurate diagnosis, treatment, and personalized medical advice. In case of emergency, call emergency services immediately.❗**`;
+                        foundSymptomMatch = true;
+                        break;
+                    }
+                }
+
+
+                if (foundSymptomMatch) {
+                    this.chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    this.chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                    aiResponseDiv.textContent = aiResponse;
+                    return aiResponse;
+                }
+
+                // 3. If no direct match in local databases, use Gemini API for general conversation
+                this.chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: this.chatHistory };
+                const apiKey = "YOUR_API_KEY_HERE"; // IMPORTANT: Replace with your actual Gemini API Key
+                if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+                    const errorMsg = "API Key is missing or invalid. Please set your Gemini API Key in the 'sam.html' file to enable the full AI assistant features.";
+                    aiResponseDiv.textContent = errorMsg;
+                    showToast(errorMsg, "error");
+                    return "Error: API Key missing.";
+                }
+
+                try {
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        this.chatHistory.push({ role: "model", parts: [{ text: text }] });
+                        aiResponseDiv.textContent = text; // Update display with AI response
+                        return text;
+                    } else {
+                        aiResponseDiv.textContent = "I'm sorry, I couldn't get a response. Please try again.";
+                        return "Error: No response from AI.";
+                    }
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    aiResponseDiv.textContent = "An error occurred while connecting to the AI. Please try again later.";
+                    showToast("Failed to get AI response.", "error");
+                    return "Error: API call failed.";
+                }
+            }
+            // Reset chat history for a new conversation
+            resetChatHistory() {
+                // Initial prompt for the LLM. It helps guide the AI's behavior.
+                this.chatHistory = [{
+                    role: "user",
+                    parts: [{ text: `You are an AI Health Assistant. Your goal is to help users understand their symptoms and provide general, non-medical, home-based advice or suggest when to seek professional help. If a user mentions a symptom, ask clarifying questions (e.g., "Is it dry or wet cough?", "Are there other symptoms?") before offering advice. Always preface emergency advice with "🚨 Emergency:". Do not provide medical diagnoses or prescribe medication. Keep your advice focused on general wellness, home remedies, or referral to a medical professional. Start by asking about their current health condition.` }]
+                }, {
+                    role: "model",
+                    parts: [{ text: "Hello! What is your current health condition right now? How are you feeling today?" }]
+                }];
+            }
+        }
+
+        const aiAssistant = new AIHealthAssistant();
+        aiAssistant.resetChatHistory(); // Initialize chat history on load
+
+        // --- UI Rendering ---
+        
+        function showToast(message, type = 'success', duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast'; // Reset classes
+            toast.classList.add(type, 'show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        function renderAuthView(isLogin = true) {
+            const container = document.querySelector('#auth-view > div');
+            if (isLogin) {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold text-slate-700 dark:text-slate-200 mb-6 text-center">Login to Your Account</h2>
+                    <input type="text" id="loginUsername" placeholder="Username" class="input-field mb-4">
+                    <button id="loginBtn" class="btn-primary w-full text-lg">Login</button>
+                    <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+                        Don't have an account? <a href="#" id="showRegisterLink" class="text-teal-600 dark:text-teal-400 hover:underline">Register here</a>
+                    </p>
+                `;
+                document.getElementById('loginBtn').addEventListener('click', login);
+                document.getElementById('loginUsername').addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+                document.getElementById('showRegisterLink').addEventListener('click', (e) => { e.preventDefault(); renderAuthView(false); });
+            } else {
+                container.innerHTML = `
+                    <h2 class="text-2xl font-bold text-slate-700 dark:text-slate-200 mb-6 text-center">Create New Profile</h2>
+                    <input type="text" id="registerUsername" placeholder="Username" class="input-field mb-3">
+                    <input type="text" id="registerName" placeholder="Full Name" class="input-field mb-3">
+                    <input type="number" id="registerAge" placeholder="Age" class="input-field mb-3">
+                    <select id="registerGender" class="input-field mb-3">
+                        <option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option>
+                    </select>
+                    <input type="number" id="registerHeight" placeholder="Height (cm)" class="input-field mb-3">
+                    <input type="number" id="registerWeight" placeholder="Weight (kg)" class="input-field mb-3">
+                    <button id="createProfileBtn" class="btn-primary w-full mt-4 text-lg">Create Profile</button>
+                    <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+                        Already have an account? <a href="#" id="showLoginLink" class="text-teal-600 dark:text-teal-400 hover:underline">Login here</a>
+                    </p>
+                `;
+                document.getElementById('createProfileBtn').addEventListener('click', createProfile);
+                document.getElementById('showLoginLink').addEventListener('click', (e) => { e.preventDefault(); renderAuthView(true); });
+            }
+        }
+
+        function renderMainApp() {
+            // Render Nav
+            const navList = document.querySelector('.sidebar ul');
+            navList.innerHTML = `
+                <li><button data-view="dashboard" class="sidebar-nav-item active"><i class="fas fa-tachometer-alt"></i>Dashboard</button></li>
+                <li><button data-view="log-data" class="sidebar-nav-item"><i class="fas fa-plus-circle"></i>Log Data</button></li>
+                <li><button data-view="ai-assistant" class="sidebar-nav-item"><i class="fas fa-robot"></i>AI Assistant</button></li>
+                <li><button data-view="medication-mgmt" class="sidebar-nav-item"><i class="fas fa-pills"></i>Medications</button></li>
+                <li><button data-view="mental-wellness" class="sidebar-nav-item"><i class="fas fa-brain"></i>Mental Wellness</button></li>
+                <li><button data-view="journaling" class="sidebar-nav-item"><i class="fas fa-book-open"></i>Journaling</button></li> <li><button data-view="profile-update" class="sidebar-nav-item"><i class="fas fa-user-edit"></i>Update Profile</button></li>
+            `;
+            // Render View Placeholders
+            document.getElementById('content-area').innerHTML = `
+                <div id="dashboard-view" class="view"></div>
+                <div id="log-data-view" class="view hidden"></div>
+                <div id="ai-assistant-view" class="view hidden"></div>
+                <div id="medication-mgmt-view" class="view hidden"></div>
+                <div id="mental-wellness-view" class="view hidden"></div>
+                <div id="journaling-view" class="view hidden"></div> <div id="profile-update-view" class="view hidden"></div>
+            `;
+            document.querySelectorAll('.sidebar-nav-item').forEach(btn => btn.addEventListener('click', handleNavClick));
+        }
+
+        function handleNavClick(e) {
+            const viewId = e.currentTarget.dataset.view;
+            showView(viewId);
+            document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            e.currentTarget.classList.add('active');
+        }
+        
+        function showView(viewId) {
+            document.querySelectorAll('#content-area .view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`${viewId}-view`).classList.remove('hidden');
+            // Trigger specific renders for views that need it
+            if(viewId === 'dashboard') renderDashboard();
+            if(viewId === 'log-data') renderLogDataForm();
+            if(viewId === 'ai-assistant') renderAIAssistant();
+            if(viewId === 'medication-mgmt') renderMedicationMgmt();
+            if(viewId === 'mental-wellness') renderMentalWellnessTracker();
+            if(viewId === 'journaling') renderJournalingView(); // New render call
+            if(viewId === 'profile-update') renderProfileUpdateForm();
+        }
+
+        function renderDashboard() {
+            const view = document.getElementById('dashboard-view');
+            const today = new Date().toISOString().slice(0, 10);
+            const todayCalories = currentUserProfile.calories_consumed.filter(item => item.date === today).reduce((sum, item) => sum + item.calories, 0);
+            const todayActivity = currentUserProfile.activities.filter(item => item.date === today).reduce((sum, item) => sum + item.duration_minutes, 0);
+            const todayWater = currentUserProfile.water_intake_ml.filter(item => item.date === today).reduce((sum, item) => sum + item.amount_ml, 0);
+
+            view.innerHTML = `
+                <h1 class="text-3xl font-bold mb-6">Health Dashboard</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="card md:col-span-2 lg:col-span-3">
+                        <h2 class="section-title"><i class="fas fa-user-circle"></i>User Profile</h2>
+                        <div id="profileDetails" class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-slate-600 dark:text-slate-300"></div>
+                    </div>
+                    <div class="card md:col-span-2 lg:col-span-3">
+                        <h2 class="section-title"><i class="fas fa-chart-line"></i>Overall Health Summary</h2>
+                        <div id="overallHealthSummary" class="text-slate-600 dark:text-slate-300"></div>
+                    </div>
+                    <div class="card lg:col-span-2">
+                        <h2 class="section-title"><i class="fas fa-heartbeat"></i>Vital Signs Trend</h2>
+                        <canvas id="vitalChart"></canvas>
+                    </div>
+                    <div class="card">
+                        <h2 class="section-title"><i class="fas fa-fire"></i>Calorie Intake Trend</h2>
+                        <canvas id="calorieChart"></canvas>
+                     </div>
+                     <div class="card">
+                        <h2 class="section-title"><i class="fas fa-running"></i>Today's Activity</h2>
+                        <p class="text-4xl font-bold text-teal-600 dark:text-teal-400">${todayActivity} <span class="text-lg font-normal text-slate-500">mins</span></p>
+                    </div>
+                    <div class="card">
+                        <h2 class="section-title"><i class="fas fa-tint"></i>Today's Water Intake</h2>
+                        <p class="text-4xl font-bold text-blue-600 dark:text-blue-400">${todayWater} <span class="text-lg font-normal text-slate-500">ml</span></p>
+                    </div>
+                    <div class="card">
+                        <h2 class="section-title"><i class="fas fa-prescription-bottle-alt"></i>Medication Schedule</h2>
+                        <div id="medicationList" class="text-slate-600 dark:text-slate-300"></div>
+                    </div>
+                     <div class="card md:col-span-2 lg:col-span-3">
+                        <h2 class="section-title"><i class="fas fa-smile"></i>Recent Mental Wellness Check-ins</h2>
+                        <div id="mentalWellnessList" class="text-slate-600 dark:text-slate-300"></div>
+                    </div>
+                    <div class="card md:col-span-2 lg:col-span-3">
+                        <h2 class="section-title"><i class="fas fa-book"></i>Recent Journal Entries</h2>
+                        <div id="journalEntriesList" class="text-slate-600 dark:text-slate-300"></div>
+                    </div>
+                </div>`;
+            
+            // Populate Profile
+            document.getElementById('profileDetails').innerHTML = `
+                <p><strong>Name:</strong> ${currentUserProfile.name}</p>
+                <p><strong>Age:</strong> ${currentUserProfile.age}</p>
+                <p><strong>Gender:</strong> ${currentUserProfile.gender}</p>
+                <p><strong>Height:</strong> ${currentUserProfile.height_cm} cm</p>
+                <p><strong>Weight:</strong> ${currentUserProfile.weight_kg} kg</p>
+                <p><strong>Medical History:</strong> ${currentUserProfile.medical_history || 'N/A'}</p>
+            `;
+
+            // Populate Overall Health Summary
+            const healthSummaryDiv = document.getElementById('overallHealthSummary');
+            let summaryText = `<p>Welcome, <strong>${currentUserProfile.name}</strong>!</p>`;
+
+            // Vital Signs Summary
+            if (currentUserProfile.vital_signs.length > 0) {
+                const avgBpSystolic = (currentUserProfile.vital_signs.reduce((sum, v) => sum + v.bp_systolic, 0) / currentUserProfile.vital_signs.length).toFixed(0);
+                const avgBpDiastolic = (currentUserProfile.vital_signs.reduce((sum, v) => sum + v.bp_diastolic, 0) / currentUserProfile.vital_signs.length).toFixed(0);
+                const avgSugar = (currentUserProfile.vital_signs.reduce((sum, v) => sum + v.sugar, 0) / currentUserProfile.vital_signs.length).toFixed(1);
+                const avgOxygen = (currentUserProfile.vital_signs.reduce((sum, v) => sum + v.oxygen, 0) / currentUserProfile.vital_signs.length).toFixed(1);
+                summaryText += `<p>Your average Blood Pressure is <strong>${avgBpSystolic}/${avgBpDiastolic} mmHg</strong>, average Blood Sugar is <strong>${avgSugar} mg/dL</strong>, and average Oxygen Saturation is <strong>${avgOxygen}%</strong>.</p>`;
+            } else {
+                summaryText += `<p>No vital signs logged yet. Start logging to see your trends!</p>`;
+            }
+
+            // Calorie and Activity Summary (e.g., last 30 days)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const recentCalories = currentUserProfile.calories_consumed.filter(item => new Date(item.date) >= thirtyDaysAgo);
+            const totalRecentCalories = recentCalories.reduce((sum, item) => sum + item.calories, 0);
+            const avgDailyCalories = recentCalories.length > 0 ? (totalRecentCalories / Math.min(30, recentCalories.length)).toFixed(0) : 0;
+            summaryText += `<p>In the last ${Math.min(30, recentCalories.length)} days, you've consumed an average of <strong>${avgDailyCalories} calories/day</strong>.</p>`;
+
+            const recentActivities = currentUserProfile.activities.filter(item => new Date(item.date) >= thirtyDaysAgo);
+            const totalRecentActivityMinutes = recentActivities.reduce((sum, item) => sum + item.duration_minutes, 0);
+            const avgDailyActivityMinutes = recentActivities.length > 0 ? (totalRecentActivityMinutes / Math.min(30, recentActivities.length)).toFixed(0) : 0;
+            summaryText += `<p>You've averaged <strong>${avgDailyActivityMinutes} minutes of physical activity per day</strong> in the last ${Math.min(30, recentActivities.length)} days.</p>`;
+
+            // Water Intake Summary (e.g., daily average)
+            const recentWater = currentUserProfile.water_intake_ml.filter(item => new Date(item.date) >= thirtyDaysAgo);
+            const totalRecentWater = recentWater.reduce((sum, item) => sum + item.amount_ml, 0);
+            const avgDailyWater = recentWater.length > 0 ? (totalRecentWater / Math.min(30, recentWater.length)).toFixed(0) : 0;
+            summaryText += `<p>Your average daily water intake is <strong>${avgDailyWater} ml</strong>.</p>`;
+            
+            healthSummaryDiv.innerHTML = summaryText;
+
+            
+            // Populate Medication List
+            const medList = document.getElementById('medicationList');
+            if (currentUserProfile.medications.length > 0) {
+                medList.innerHTML = currentUserProfile.medications.map(med => `
+                    <div class="data-item flex items-center gap-2">
+                        ${med.imageUrl ? `<img src="${med.imageUrl}" alt="${med.name}" class="w-10 h-10 rounded-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/40x40/cccccc/ffffff?text=Pill';">` : `<img src="https://placehold.co/40x40/cccccc/ffffff?text=Pill" alt="Pill" class="w-10 h-10 rounded-full object-cover">`}
+                        <div>
+                            <strong>${med.name}</strong> (${med.dosage}) - ${med.schedule}
+                            ${med.last_taken ? `<br><span class="text-xs text-slate-500 dark:text-slate-400">Last taken: ${med.last_taken}</span>` : ''}
+                        </div>
+                    </div>`).join('');
+            } else {
+                medList.innerHTML = '<p>No medications added.</p>';
+            }
+
+            // Populate Mental Wellness List
+            const mentalWellnessList = document.getElementById('mentalWellnessList');
+            if (currentUserProfile.mental_wellness_checkins.length > 0) {
+                mentalWellnessList.innerHTML = currentUserProfile.mental_wellness_checkins.slice(-5).reverse().map(checkin => `
+                    <div class="data-item">
+                        <strong>${checkin.date}</strong> - Mood: ${checkin.mood}
+                        ${checkin.notes ? `<br><span class="text-xs text-slate-500 dark:text-slate-400">Notes: ${checkin.notes}</span>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                mentalWellnessList.innerHTML = '<p>No mental wellness check-ins logged.</p>';
+            }
+
+            // Populate Journal Entries List (from dashboard - still showing truncated version but no toggle here)
+            const journalEntriesList = document.getElementById('journalEntriesList');
+            if (currentUserProfile.journal_entries.length > 0) {
+                journalEntriesList.innerHTML = currentUserProfile.journal_entries.slice(-3).reverse().map(entry => `
+                    <div class="data-item">
+                        <strong>${entry.date} ${entry.time}</strong>
+                        <p class="text-sm mt-1">${entry.entry.substring(0, 100)}${entry.entry.length > 100 ? '...' : ''}</p>
+                    </div>
+                `).join('');
+            } else {
+                journalEntriesList.innerHTML = '<p>No journal entries yet.</p>';
+            }
+
+            // Render Charts
+            renderCharts();
+        }
+
+        function renderCharts() {
+            // Destroy existing charts if they exist
+            if(vitalChart) vitalChart.destroy();
+            if(calorieChart) calorieChart.destroy();
+
+            const ctxVital = document.getElementById('vitalChart').getContext('2d');
+            const ctxCalorie = document.getElementById('calorieChart').getContext('2d');
+            const chartFontColor = appData.theme === 'dark' ? '#e5e7eb' : '#1f2937'; /* Use new text colors */
+            
+            // Vital Signs Chart
+            const last7Vitals = currentUserProfile.vital_signs.slice(-7);
+            vitalChart = new Chart(ctxVital, {
+                type: 'line',
+                data: {
+                    labels: last7Vitals.map(v => `${v.date.slice(5)} ${v.time}`),
+                    datasets: [
+                        { label: 'Systolic BP', data: last7Vitals.map(v => v.bp_systolic), borderColor: 'var(--primary-purple)', tension: 0.3 }, /* Using purple for lines */
+                        { label: 'Diastolic BP', data: last7Vitals.map(v => v.bp_diastolic), borderColor: 'var(--light-purple)', tension: 0.3 },
+                        { label: 'Blood Sugar', data: last7Vitals.map(v => v.sugar), borderColor: '#f97316', tension: 0.3 }, /* Kept orange for contrast */
+                        { label: 'Temperature (°C)', data: last7Vitals.map(v => v.temperature), borderColor: '#ef4444', tension: 0.3 },
+                        { label: 'Oxygen (%)', data: last7Vitals.map(v => v.oxygen), borderColor: '#3b82f6', tension: 0.3 }
+                    ]
+                },
+                options: { 
+                    scales: { 
+                        x: { 
+                            ticks: { color: chartFontColor },
+                            grid: { color: appData.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                        }, 
+                        y: { 
+                            ticks: { color: chartFontColor },
+                            grid: { color: appData.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                        } 
+                    }, 
+                    plugins: { 
+                        legend: { 
+                            labels: { color: chartFontColor } 
+                        } 
+                    } 
+                }
+            });
+
+            // Calorie Chart
+            const last7Days = [...Array(7)].map((_, i) => new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)).reverse();
+            const calorieData = last7Days.map(date => currentUserProfile.calories_consumed.filter(c => c.date === date).reduce((sum, c) => sum + c.calories, 0));
+            calorieChart = new Chart(ctxCalorie, {
+                type: 'bar',
+                data: {
+                    labels: last7Days.map(d => d.slice(5)),
+                    datasets: [{ label: 'Calories Consumed', data: calorieData, backgroundColor: 'var(--light-purple)', borderRadius: 5 }] /* Using light purple for bars */
+                },
+                options: { 
+                    scales: { 
+                        x: { 
+                            ticks: { color: chartFontColor },
+                            grid: { color: appData.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                        }, 
+                        y: { 
+                            ticks: { color: chartFontColor },
+                            grid: { color: appData.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                        } 
+                    }, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+        
+        function renderLogDataForm() {
+             document.getElementById('log-data-view').innerHTML = `
+                <h2 class="section-title"><i class="fas fa-edit"></i>Log Your Health Data</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card">
+                        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Vital Signs</h3>
+                        <input type="number" id="bpSystolic" placeholder="Systolic BP" class="input-field mb-3">
+                        <input type="number" id="bpDiastolic" placeholder="Diastolic BP" class="input-field mb-3">
+                        <input type="number" step="0.1" id="bloodSugar" placeholder="Blood Sugar (mg/dL)" class="input-field mb-3">
+                        <input type="number" step="0.1" id="temperature" placeholder="Temperature (°C)" class="input-field mb-3">
+                        <input type="number" step="0.1" id="oxygen" placeholder="Oxygen Saturation (%)" class="input-field mb-3">
+                        <button id="logVitalBtn" class="btn-primary w-full mt-2">Log Vitals</button>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Calorie Intake</h3>
+                        <div class="relative mb-3">
+                            <input type="text" id="foodItem" placeholder="Food Item (e.g., Apple)" class="input-field pr-24">
+                            <button id="lookupCalorieBtn" class="absolute right-1 top-1/2 -translate-y-1/2 btn-secondary !px-2 !py-1">Look Up</button>
+                        </div>
+                        <input type="number" id="caloriesConsumed" placeholder="Calories" class="input-field mb-3" readonly>
+                        <button id="logCalorieBtn" class="btn-primary w-full mt-2">Log Calories</button>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Physical Activity <span id="activityTimerDisplay" class="ml-2 font-normal text-sm text-teal-600 dark:text-teal-400">00:00:00</span></h3>
+                        <input type="text" id="activityType" placeholder="Activity Type (e.g., Running)" class="input-field mb-3">
+                        <div class="flex gap-2 mb-3">
+                            <button id="startActivityTimer" class="btn-secondary w-1/3">Start</button>
+                            <button id="stopActivityTimer" class="btn-secondary w-1/3" disabled>Stop</button>
+                            <button id="resetActivityTimer" class="btn-secondary w-1/3">Reset</button>
+                        </div>
+                        <input type="number" id="activityDurationManual" placeholder="Or enter duration (minutes)" class="input-field mb-3">
+                        <button id="logActivityBtn" class="btn-primary w-full mt-2">Log Activity</button>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Water Intake</h3>
+                        <input type="number" id="waterAmount" placeholder="Amount (ml)" class="input-field mb-3">
+                        <button id="logWaterBtn" class="btn-primary w-full mt-2">Log Water</button>
+                    </div>
+                </div>`;
+            
+            document.getElementById('logVitalBtn').addEventListener('click', logVital);
+            document.getElementById('lookupCalorieBtn').addEventListener('click', lookupCalories); // New event listener
+            document.getElementById('logCalorieBtn').addEventListener('click', logCalorie);
+            document.getElementById('logActivityBtn').addEventListener('click', logActivity);
+            document.getElementById('logWaterBtn').addEventListener('click', logWater);
+
+            // Timer event listeners
+            document.getElementById('startActivityTimer').addEventListener('click', startActivityTimer);
+            document.getElementById('stopActivityTimer').addEventListener('click', stopActivityTimer);
+            document.getElementById('resetActivityTimer').addEventListener('click', resetActivityTimer);
+
+            // Initialize timer display
+            updateActivityTimerDisplay();
+        }
+        
+        function renderAIAssistant() {
+            document.getElementById('ai-assistant-view').innerHTML = `
+                <div class="card max-w-2xl mx-auto">
+                    <h2 class="section-title"><i class="fas fa-brain"></i>AI Health Assistant Chat</h2>
+                    <div id="chatWindow" class="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600 my-4 text-slate-800 dark:text-slate-200 min-h-[200px] max-h-[400px] overflow-y-auto flex flex-col space-y-2">
+                        </div>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="chatInput" placeholder="Ask me about your health..." class="input-field flex-grow">
+                        <button id="sendChatBtn" class="btn-primary">Send</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Quick Actions</h3>
+                    <div class="space-y-4">
+                        <button id="getGeneralAdviceBtn" class="btn-primary w-full">Get General Health Tip</button>
+                        <button id="getCalorieRecommendationBtn" class="btn-primary w-full">Recommend Daily Calories</button>
+                        <div class="relative">
+                            <input type="text" id="dietGoal" placeholder="Your diet goal (e.g., weight loss)" class="input-field">
+                            <button id="getDietRecommendationBtn" class="absolute right-2 top-1/2 -translate-y-1/2 btn-secondary !px-3">Get Diet Plan</button>
+                        </div>
+                         <div class="relative">
+                            <input type="text" id="emergencySymptom" placeholder="Describe an emergency symptom..." class="input-field">
+                            <button id="getEmergencyAdviceBtn" class="absolute right-2 top-1/2 -translate-y-1/2 btn-secondary !px-3 !bg-red-500 text-white">Get Advice</button>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="medicationDietPlanInput" placeholder="Medication for diet advice (e.g., 'blood pressure medication')" class="input-field">
+                            <button id="getMedicationDietPlanBtn" class="absolute right-2 top-1/2 -translate-y-1/2 btn-secondary !px-3">Get Med Diet Plan</button>
+                        </div>
+                    </div>
+                </div>`;
+                
+            document.getElementById('getGeneralAdviceBtn').addEventListener('click', () => { displayAIChatMessage(aiAssistant.getGeneralAdvice(), 'model'); });
+            document.getElementById('getCalorieRecommendationBtn').addEventListener('click', () => { displayAIChatMessage(aiAssistant.getCalorieRecommendation(currentUserProfile), 'model'); });
+            document.getElementById('getDietRecommendationBtn').addEventListener('click', () => { const goal = document.getElementById('dietGoal').value; displayAIChatMessage(aiAssistant.getDietRecommendation(goal || 'general wellness'), 'model'); });
+            document.getElementById('getEmergencyAdviceBtn').addEventListener('click', () => { const symptom = document.getElementById('emergencySymptom').value; if(!symptom) {showToast('Please describe a symptom.', 'error'); return;} displayAIChatMessage(aiAssistant.getEmergencyAdvice(symptom), 'model'); });
+            document.getElementById('getMedicationDietPlanBtn').addEventListener('click', () => { const medName = document.getElementById('medicationDietPlanInput').value; if(!medName) {showToast('Please enter a medication name.', 'error'); return;} displayAIChatMessage(aiAssistant.getMedicationDietPlan(medName), 'model'); });
+
+            // Event listener for new chat input
+            document.getElementById('sendChatBtn').addEventListener('click', handleChatInput);
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleChatInput();
+                }
+            });
+
+            // Display initial AI greeting
+            displayAIChatMessage("Hello! What is your current health condition right now? How are you feeling today?", 'model');
+        }
+
+        // Helper function to display messages in the chat window
+        function displayAIChatMessage(message, role) {
+            const chatWindow = document.getElementById('chatWindow');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('p-2', 'rounded-lg', 'max-w-[80%]');
+            if (role === 'user') {
+                messageDiv.classList.add('bg-teal-500', 'text-white', 'self-end');
+            } else {
+                messageDiv.classList.add('bg-slate-200', 'dark:bg-slate-600', 'text-slate-800', 'dark:text-slate-200', 'self-start');
+            }
+            // Use innerHTML to allow for bold text from AI responses
+            messageDiv.innerHTML = message; 
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom
+        }
+
+        async function handleChatInput() {
+            const chatInput = document.getElementById('chatInput');
+            const userMessage = chatInput.value.trim();
+            if (userMessage === '') return;
+
+            displayAIChatMessage(userMessage, 'user');
+            chatInput.value = ''; // Clear input
+
+            // Send message to AI assistant (LLM or local data)
+            await aiAssistant.getSymptomBasedAdvice(userMessage);
+        }
+
+
+        function renderMedicationMgmt() {
+             const view = document.getElementById('medication-mgmt-view');
+             view.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card">
+                        <h2 class="section-title"><i class="fas fa-plus-square"></i>Add New Medication</h2>
+                        <input type="text" id="medName" placeholder="Medication Name" class="input-field mb-3">
+                        <input type="text" id="medDosage" placeholder="Dosage (e.g., 500mg)" class="input-field mb-3">
+                        <input type="text" id="medSchedule" placeholder="Schedule (e.g., daily at 8 AM)" class="input-field mb-3">
+                        <input type="text" id="medImageUrl" placeholder="Image URL (optional)" class="input-field mb-4">
+                        <button id="addMedicationBtn" class="btn-primary w-full">Add Medication</button>
+                    </div>
+                    <div class="card">
+                        <h2 class="section-title"><i class="fas fa-history"></i>Your Medications</h2>
+                        <div id="currentMedicationsList" class="space-y-2 text-slate-600 dark:text-slate-300"></div>
+                        <input type="text" id="markMedicationName" placeholder="Medication to mark as taken" class="input-field mt-4">
+                        <button id="markMedicationTakenBtn" class="btn-primary w-full mt-2">Mark as Taken</button>
+                    </div>
+                </div>
+             `;
+             document.getElementById('addMedicationBtn').addEventListener('click', addMedication);
+             document.getElementById('markMedicationTakenBtn').addEventListener('click', markMedicationTaken);
+             updateMedicationList();
+        }
+
+        function renderMentalWellnessTracker() {
+            const view = document.getElementById('mental-wellness-view');
+            view.innerHTML = `
+                <div class="card max-w-xl mx-auto">
+                    <h2 class="section-title"><i class="fas fa-head-side-mask"></i>Mental Wellness Check-in</h2>
+                    <p class="text-slate-700 dark:text-slate-200 mb-4">How are you feeling today?</p>
+                    <select id="moodSelect" class="input-field mb-3">
+                        <option value="">Select Mood</option>
+                        <option value="Happy">Happy 😊</option>
+                        <option value="Neutral">Neutral 😐</option>
+                        <option value="Anxious">Anxious 😟</option>
+                        <option value="Stressed">Stressed 😫</option>
+                        <option value="Sad">Sad 😔</option>
+                        <option value="Energized">Energized ✨</option>
+                        <option value="Calm">Calm 😌</option>
+                    </select>
+                    <textarea id="wellnessNotes" placeholder="Any additional notes about your day or feelings..." class="input-field mb-4 h-24 resize-y"></textarea>
+                    <button id="logWellnessBtn" class="btn-primary w-full">Log Check-in</button>
+                    
+                    <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mt-8 mb-4">Your Recent Check-ins</h3>
+                    <div id="recentWellnessCheckins" class="space-y-3 text-slate-600 dark:text-slate-300"></div>
+                </div>
+            `;
+            document.getElementById('logWellnessBtn').addEventListener('click', logMentalWellness);
+            updateMentalWellnessList();
+        }
+
+        // New function for Journaling View
+        function renderJournalingView() {
+            const view = document.getElementById('journaling-view');
+            view.innerHTML = `
+                <div class="card max-w-xl mx-auto">
+                    <h2 class="section-title"><i class="fas fa-book-open"></i>Your Health Journal</h2>
+                    <p class="text-slate-700 dark:text-slate-200 mb-4">Write down your thoughts, observations, or any health-related notes.</p>
+                    <textarea id="journalEntry" placeholder="Today I feel... (e.g., energetic, noted a slight headache, exercised for 30 mins)" class="input-field mb-4 h-32 resize-y"></textarea>
+                    <button id="saveJournalBtn" class="btn-primary w-full">Save Entry</button>
+                    
+                    <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-200 mt-8 mb-4">Past Entries</h3>
+                    <div id="pastJournalEntries" class="space-y-3 text-slate-600 dark:text-slate-300"></div>
+                </div>
+            `;
+            document.getElementById('saveJournalBtn').addEventListener('click', logJournal);
+            updateJournalEntriesList();
+        }
+
+        function renderProfileUpdateForm() {
+            const view = document.getElementById('profile-update-view');
+            view.innerHTML = `
+                <div class="card max-w-lg mx-auto">
+                    <h2 class="section-title"><i class="fas fa-user-cog"></i>Update Your Profile</h2>
+                    <input type="text" id="updateName" class="input-field mb-3" value="${currentUserProfile.name}">
+                    <input type="number" id="updateAge" class="input-field mb-3" value="${currentUserProfile.age}">
+                    <input type="number" id="updateHeight" class="input-field mb-3" value="${currentUserProfile.height_cm}">
+                    <input type="number" id="updateWeight" class="input-field mb-3" value="${currentUserProfile.weight_kg}">
+                    <textarea id="updateMedicalHistory" class="input-field mb-4">${currentUserProfile.medical_history}</textarea>
+                    <button id="updateProfileBtn" class="btn-primary w-full">Update Profile</button>
+                </div>
+            `;
+            document.getElementById('updateProfileBtn').addEventListener('click', updateProfile);
+        }
+
+        // --- Core Logic & Event Handlers ---
+        
+        function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            if (!username) { showToast("Please enter a username.", "error"); return; }
+
+            if (appData.users[username]) {
+                const userData = appData.users[username];
+                currentUserProfile = new UserProfile(username, userData.name, userData.age, userData.gender, userData.height_cm, userData.weight_kg, userData.medical_history);
+                Object.assign(currentUserProfile, userData); // Restore all data including arrays
+
+                appData.currentUsername = username;
+                saveAppState();
+
+                document.getElementById('auth-view').classList.add('hidden');
+                document.getElementById('main-view').classList.remove('hidden');
+                
+                document.getElementById('sidebarUsername').textContent = currentUserProfile.name; /* Update sidebar username */
+                document.getElementById('welcomeMessage').textContent = aiAssistant.getWelcomeGreeting(currentUserProfile.name);
+                renderMainApp();
+                showView('dashboard');
+                // Reset AI assistant chat history on login
+                aiAssistant.resetChatHistory();
+            } else {
+                showToast("User not found. Please register.", "error");
+            }
+        }
+        
+        function createProfile() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const name = document.getElementById('registerName').value.trim();
+            const age = parseInt(document.getElementById('registerAge').value);
+            const gender = document.getElementById('registerGender').value;
+            const height = parseFloat(document.getElementById('registerHeight').value);
+            const weight = parseFloat(document.getElementById('registerWeight').value);
+
+            if (!username || !name || isNaN(age) || !gender || isNaN(height) || isNaN(weight)) { showToast("Please fill in all required fields.", "error"); return; }
+            if (appData.users[username]) { showToast("Username already exists.", "error"); return; }
+
+            // Create new user profile object and add it to appData.users
+            appData.users[username] = new UserProfile(username, name, age, gender, height, weight, "");
+            
+            // Explicitly save the entire appData after adding a new user
+            saveData(appData);
+
+            showToast("Profile created! Please log in.", "success");
+            renderAuthView(true);
+            
+            // Clear the registration form fields
+            document.getElementById('registerUsername').value = '';
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerAge').value = '';
+            document.getElementById('registerGender').value = '';
+            document.getElementById('registerHeight').value = '';
+            document.getElementById('registerWeight').value = '';
+        }
+
+        function logout() {
+            currentUserProfile = null;
+            appData.currentUsername = null;
+            saveAppState();
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+            renderAuthView(true);
+            showToast("Logged out successfully.", "success");
+        }
+
+        function saveAppState() {
+            if (currentUserProfile) {
+                appData.users[currentUserProfile.username] = { ...currentUserProfile };
+            }
+            saveData(appData);
+        }
+
+        function logVital() {
+            const bpSystolic = parseInt(document.getElementById('bpSystolic').value);
+            const bpDiastolic = parseInt(document.getElementById('bpDiastolic').value);
+            const bloodSugar = parseFloat(document.getElementById('bloodSugar').value);
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const oxygen = parseFloat(document.getElementById('oxygen').value);
+
+
+            if (isNaN(bpSystolic) || isNaN(bpDiastolic) || isNaN(bloodSugar) || isNaN(temperature) || isNaN(oxygen)) {
+                showToast("Please enter valid vital signs for all fields.", "error");
+                return;
+            }
+            currentUserProfile.addVitalSign(bpSystolic, bpDiastolic, bloodSugar, temperature, oxygen);
+            showToast("Vital signs logged successfully!", "success");
+            document.getElementById('bpSystolic').value = '';
+            document.getElementById('bpDiastolic').value = '';
+            document.getElementById('bloodSugar').value = '';
+            document.getElementById('temperature').value = '';
+            document.getElementById('oxygen').value = '';
+            renderDashboard(); // Re-render dashboard to update charts
+        }
+
+        function lookupCalories() {
+            const foodItemInput = document.getElementById('foodItem');
+            const caloriesConsumedInput = document.getElementById('caloriesConsumed');
+            const foodName = foodItemInput.value.trim().toLowerCase();
+
+            if (foodCalorieDatabase[foodName]) {
+                caloriesConsumedInput.value = foodCalorieDatabase[foodName];
+                showToast(`Found ${foodCalorieDatabase[foodName]} calories for ${foodName}!`, "success");
+            } else {
+                caloriesConsumedInput.value = ''; // Clear previous value
+                showToast(`Calorie data for "${foodName}" not found. Please enter manually.`, "error");
+            }
+        }
+
+        function logCalorie() {
+            const foodItem = document.getElementById('foodItem').value.trim();
+            const calories = parseInt(document.getElementById('caloriesConsumed').value);
+
+            if (!foodItem || isNaN(calories) || calories <= 0) {
+                showToast("Please enter a valid food item and calorie amount.", "error");
+                return;
+            }
+            currentUserProfile.addCalorieIntake(foodItem, calories);
+            showToast("Calorie intake logged successfully!", "success");
+            document.getElementById('foodItem').value = '';
+            document.getElementById('caloriesConsumed').value = '';
+            renderDashboard(); // Re-render dashboard to update charts
+        }
+
+        // Timer functions for physical activity
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function updateActivityTimerDisplay() {
+            const display = document.getElementById('activityTimerDisplay');
+            if (display) {
+                display.textContent = formatTime(activityElapsedTime);
+            }
+        }
+
+        function startActivityTimer() {
+            if (activityTimerInterval) return; // Timer already running
+            activityStartTime = Date.now() - activityElapsedTime;
+            activityTimerInterval = setInterval(() => {
+                activityElapsedTime = Date.now() - activityStartTime;
+                updateActivityTimerDisplay();
+            }, 1000);
+            document.getElementById('startActivityTimer').disabled = true;
+            document.getElementById('stopActivityTimer').disabled = false;
+        }
+
+        function stopActivityTimer() {
+            clearInterval(activityTimerInterval);
+            activityTimerInterval = null;
+            document.getElementById('startActivityTimer').disabled = false;
+            document.getElementById('stopActivityTimer').disabled = true;
+        }
+
+        function resetActivityTimer() {
+            stopActivityTimer();
+            activityElapsedTime = 0;
+            updateActivityTimerDisplay();
+            document.getElementById('startActivityTimer').disabled = false;
+            document.getElementById('stopActivityTimer').disabled = true;
+        }
+
+        function logActivity() {
+            const activityType = document.getElementById('activityType').value.trim();
+            let duration = parseFloat(document.getElementById('activityDurationManual').value);
+
+            if (isNaN(duration) && activityElapsedTime > 0) { // If manual input is empty, use timer
+                duration = Math.round(activityElapsedTime / 60000); // Convert ms to minutes
+            } else if (isNaN(duration) || duration <= 0) { // If both empty or invalid
+                showToast("Please enter a valid activity type and duration, or start the timer.", "error");
+                return;
+            }
+
+            // Simple estimation for calories burned (e.g., 5 calories per minute)
+            currentUserProfile.addPhysicalActivity(activityType, duration, duration * 5); 
+            showToast("Physical activity logged successfully!", "success");
+            document.getElementById('activityType').value = '';
+            document.getElementById('activityDurationManual').value = '';
+            resetActivityTimer(); // Reset timer after logging
+            renderDashboard(); // Re-render dashboard to update dashboard activity
+        }
+
+        function logWater() {
+            const amount = parseInt(document.getElementById('waterAmount').value);
+
+            if (isNaN(amount) || amount <= 0) {
+                showToast("Please enter a valid water amount in ml.", "error");
+                return;
+            }
+            currentUserProfile.addWaterIntake(amount);
+            showToast("Water intake logged successfully!", "success");
+            document.getElementById('waterAmount').value = '';
+            renderDashboard(); // Re-render dashboard to update water intake
+        }
+
+        function addMedication() {
+            const name = document.getElementById('medName').value.trim();
+            const dosage = document.getElementById('medDosage').value.trim();
+            const schedule = document.getElementById('medSchedule').value.trim();
+            const imageUrl = document.getElementById('medImageUrl').value.trim();
+
+            if (!name || !dosage || !schedule) {
+                showToast("Please fill in all medication details (Name, Dosage, Schedule).", "error");
+                return;
+            }
+            currentUserProfile.addMedication(name, dosage, schedule, imageUrl);
+            showToast("Medication added successfully!", "success");
+            document.getElementById('medName').value = '';
+            document.getElementById('medDosage').value = '';
+            document.getElementById('medSchedule').value = '';
+            document.getElementById('medImageUrl').value = '';
+            updateMedicationList();
+            renderDashboard(); // Update medication list on dashboard
+        }
+
+        function markMedicationTaken() {
+            const medicationName = document.getElementById('markMedicationName').value.trim();
+            if (!medicationName) {
+                showToast("Please enter the name of the medication to mark as taken.", "error");
+                return;
+            }
+            if (currentUserProfile.markMedicationTaken(medicationName)) {
+                showToast(`${medicationName} marked as taken!`, "success");
+                document.getElementById('markMedicationName').value = '';
+                updateMedicationList();
+            } else {
+                showToast(`Medication "${medicationName}" not found.`, "error");
+            }
+        }
+
+        function updateMedicationList() {
+            const listContainer = document.getElementById('currentMedicationsList');
+            if (currentUserProfile.medications.length > 0) {
+                listContainer.innerHTML = currentUserProfile.medications.map(med => `
+                    <div class="data-item flex items-center gap-2">
+                        ${med.imageUrl ? `<img src="${med.imageUrl}" alt="${med.name}" class="w-10 h-10 rounded-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/40x40/cccccc/ffffff?text=Pill';">` : `<img src="https://placehold.co/40x40/cccccc/ffffff?text=Pill" alt="Pill" class="w-10 h-10 rounded-full object-cover">`}
+                        <div>
+                            <strong>${med.name}</strong> (${med.dosage}) - ${med.schedule}
+                            ${med.last_taken ? `<br><span class="text-xs text-slate-500 dark:text-slate-400">Last taken: ${med.last_taken}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                listContainer.innerHTML = '<p>No medications added yet. Add some above!</p>';
+            }
+        }
+
+        function logMentalWellness() {
+            const mood = document.getElementById('moodSelect').value;
+            const notes = document.getElementById('wellnessNotes').value.trim();
+
+            if (!mood) {
+                showToast("Please select your mood.", "error");
+                return;
+            }
+            currentUserProfile.addMentalWellnessCheckin(mood, notes);
+            showToast("Mental wellness check-in logged!", "success");
+            document.getElementById('moodSelect').value = '';
+            document.getElementById('wellnessNotes').value = '';
+            updateMentalWellnessList();
+            renderDashboard(); // Update mental wellness list on dashboard
+        }
+
+        function updateMentalWellnessList() {
+            const listContainer = document.getElementById('recentWellnessCheckins');
+            if (currentUserProfile.mental_wellness_checkins.length > 0) {
+                listContainer.innerHTML = currentUserProfile.mental_wellness_checkins.slice(-5).reverse().map(checkin => `
+                    <div class="data-item">
+                        <strong>${checkin.date}</strong> - Mood: ${checkin.mood}
+                        ${checkin.notes ? `<br><span class="text-xs text-slate-500 dark:text-slate-400">Notes: ${checkin.notes}</span>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                listContainer.innerHTML = '<p>No recent mental wellness check-ins. Log one now!</p>';
+            }
+        }
+
+        // New function to log journal entry
+        function logJournal() {
+            const journalEntryText = document.getElementById('journalEntry').value.trim();
+            if (!journalEntryText) {
+                showToast("Journal entry cannot be empty.", "error");
+                return;
+            }
+            currentUserProfile.addJournalEntry(journalEntryText);
+            showToast("Journal entry saved!", "success");
+            document.getElementById('journalEntry').value = '';
+            updateJournalEntriesList();
+            renderDashboard(); // Update journal list on dashboard
+        }
+
+        // New function to update journal entries list with truncation and toggle
+        function updateJournalEntriesList() {
+            const listContainer = document.getElementById('pastJournalEntries');
+            if (currentUserProfile.journal_entries.length > 0) {
+                listContainer.innerHTML = currentUserProfile.journal_entries.slice().reverse().map((entry, index) => {
+                    const truncatedText = entry.entry.length > 150 ? entry.entry.substring(0, 150) + '...' : entry.entry;
+                    const showReadMore = entry.entry.length > 150;
+                    return `
+                        <div class="data-item">
+                            <strong>${entry.date} ${entry.time}</strong>
+                            <p class="text-sm mt-1 journal-entry-text" id="journalEntry${index}">${truncatedText}</p>
+                            ${showReadMore ? `<button class="read-more-btn" data-index="${index}" data-full-text="${encodeURIComponent(entry.entry)}">Read More</button>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                // Add event listeners for "Read More" buttons
+                document.querySelectorAll('.read-more-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const index = event.target.dataset.index;
+                        const fullText = decodeURIComponent(event.target.dataset.fullText);
+                        const entryElement = document.getElementById(`journalEntry${index}`);
+                        
+                        if (entryElement.classList.contains('expanded')) {
+                            entryElement.classList.remove('expanded');
+                            entryElement.textContent = entryElement.textContent.substring(0, 150) + '...'; // Re-truncate
+                            event.target.textContent = 'Read More';
+                        } else {
+                            entryElement.classList.add('expanded');
+                            entryElement.textContent = fullText;
+                            event.target.textContent = 'Show Less';
+                        }
+                    });
+                });
+
+            } else {
+                listContainer.innerHTML = '<p>No past journal entries. Write your first one!</p>';
+            }
+        }
+
+
+        function updateProfile() {
+            const name = document.getElementById('updateName').value.trim();
+            const age = parseInt(document.getElementById('updateAge').value);
+            const height = parseFloat(document.getElementById('updateHeight').value);
+            const weight = parseFloat(document.getElementById('updateWeight').value);
+            const medicalHistory = document.getElementById('updateMedicalHistory').value.trim();
+
+            if (!name || isNaN(age) || isNaN(height) || isNaN(weight)) {
+                showToast("Please fill in all required profile fields.", "error");
+                return;
+            }
+
+            currentUserProfile.updateProfile({
+                name: name,
+                age: age,
+                height_cm: height,
+                weight_kg: weight,
+                medical_history: medicalHistory
+            });
+            showToast("Profile updated successfully!", "success");
+            renderDashboard(); // Re-render dashboard to reflect changes
+            // Update welcome message
+            document.getElementById('welcomeMessage').textContent = aiAssistant.getWelcomeGreeting(currentUserProfile.name);
+            document.getElementById('sidebarUsername').textContent = currentUserProfile.name; /* Update sidebar username */
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.classList.toggle('dark');
+            if (isDark) {
+                body.classList.remove('light');
+                appData.theme = 'dark';
+            } else {
+                body.classList.add('light');
+                appData.theme = 'light';
+            }
+            saveAppState();
+            renderCharts(); // Re-render charts to update font color
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply theme on load
+            if (appData.theme === 'dark') {
+                document.body.classList.add('dark');
+            } else {
+                document.body.classList.add('light');
+            }
+
+            // Moved these event listeners to after main-view is rendered or exists
+            // since they are for elements within main-view.
+            // document.getElementById('logoutBtn').addEventListener('click', logout);
+            // document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+            if (appData.currentUsername && appData.users[appData.currentUsername]) {
+                const userData = appData.users[appData.currentUsername];
+                currentUserProfile = new UserProfile(userData.username, userData.name, userData.age, userData.gender, userData.height_cm, userData.weight_kg, userData.medical_history);
+                Object.assign(currentUserProfile, userData); // Ensure all data (arrays) are restored
+                
+                document.getElementById('auth-view').classList.add('hidden');
+                document.getElementById('main-view').classList.remove('hidden');
+                
+                // Initialize sidebar user info
+                document.getElementById('sidebarUsername').textContent = currentUserProfile.name;
+                document.getElementById('welcomeMessage').textContent = aiAssistant.getWelcomeGreeting(currentUserProfile.name);
+
+                renderMainApp();
+                showView('dashboard');
+
+                // Attach event listeners for theme toggle and logout AFTER main-view is rendered
+                document.getElementById('logoutBtn').addEventListener('click', logout);
+                document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+                
+                aiAssistant.resetChatHistory();
+            } else {
+                renderAuthView(true); // Show login by default
+            }
+        });
+    </script>
+</body>
+</html>
